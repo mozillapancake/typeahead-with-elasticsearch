@@ -1,0 +1,222 @@
+<html>
+<head>
+    <!--begin custom header content for this example-->
+
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/fonts/fonts-min.css" />
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/autocomplete/assets/skins/sam/autocomplete.css" />
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/animation/animation-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/connection/connection-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/json/json-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/datasource/datasource-min.js"></script>
+    <script type="text/javascript" src="http://yui.yahooapis.com/2.9.0/build/autocomplete/autocomplete-min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+
+    <style>
+        body {
+            background: none repeat scroll 0 0 #EEEEEE;
+            font-family: sans-serif;
+        }
+
+        .page {
+            background: none repeat scroll 0 0 white;
+            border: 4px solid #CCCCCC;
+            margin: 2em auto;
+            padding: 0.8em;
+            width: 50em;
+            height: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 20pt;
+        }
+
+        h1 {
+            border-bottom: 2px solid #EEEEEE;
+            padding-bottom: 10px;
+        }
+
+        h1, h2 {
+            font-family: 'Georgia', serif;
+            margin: 10px;
+        }
+
+        a, h1, h2 {
+            color: #377BA8;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        h1 span {
+            color:red;
+        }
+
+        ul li.item {
+            border-left: 1px solid #DFDFDF;
+            margin-left: 105px;
+            border: medium none;
+            min-height: 25px;
+            padding: 7px 5px 4px 42px;
+            position: relative;
+            width: 225px;
+        }
+
+        .yui-skin-sam .yui-ac-input {
+            position: relative;
+        }
+
+        .yui-skin-sam .yui-ac-content {
+            width: 360px;
+            -moz-border-radius-bottomleft: 5px;
+            -moz-border-radius-bottomright: 5px;
+            text-align:left;
+        }
+
+        .yui-skin-sam .yui-ac {
+            font-family: sans-serif;
+            font-size: 12pt;
+            color: #444;
+        }
+
+        .yui-skin-sam .yui-ac-content li {
+            border-bottom: 1px solid #aaaaaa;
+        }
+
+        .yui-skin-sam .yui-ac-content li.yui-ac-highlight p.item-mainline {
+            color: white;
+        }
+
+        .item-pic {
+            height: 50px;
+            left: 6px;
+            top: 5px;
+            width: 50px;
+        }
+
+        .yui-skin-sam .yui-ac-content li h4 {
+            margin: 0 1px 0 0;
+            display: inline;
+            padding-left: 10px;
+        }
+
+        .yui-skin-sam .yui-ac-content li {
+            cursor: pointer;
+        }
+
+        .yui-skin-sam .yui-ac-content li p {
+            font-size: 10pt;
+            height: auto;
+            margin: 0;
+            overflow: hidden;
+            padding-left: 10px;
+        }
+
+        .item-mainline {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #377BA8;;
+        }
+
+        .item-icon {
+            width:auto;
+            height:auto;
+        }
+
+        #memberId {
+            width:100px;
+            height:18px;
+            font-size:9pt;
+        }
+
+        #searchForm {
+            width: 50%;
+            padding: 10px;
+            margin: auto
+        }
+
+        #cleoInput {
+            width: 360px;
+        }
+    </style>
+</head>
+
+<body class="yui-skin-sam">
+<div class="page">
+    <h1><strike>Cleo!</strike> Elastic Search!</h1>
+    <input id="memberId" type="hidden" value="1">
+    <div id="searchForm">
+        <div id="cleoAutoComplete">
+            <input id="cleoInput" type="text">
+            <div id="cleoContainer"></div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    YAHOO.example.BasicRemote = function() {
+        var dataSourceURL = "http://ec2-50-19-67-63.compute-1.amazonaws.com:8081/search?";
+        //var dataSourceURL = "http://" + window.location.hostname + ":" + window.location.port + "/search?";
+        var dataSource = new YAHOO.util.XHRDataSource(dataSourceURL);
+
+        dataSource.connMgr = YAHOO.util.Connect;
+        dataSource.connMgr.initHeader('Accept', "application/json", true);
+
+        dataSource.responseType = YAHOO.util.XHRDataSource.TYPE_JSON;
+        dataSource.responseSchema = {
+            resultsList: "hits.hits",
+            fields: ["_id", "fields.name"]
+        };
+
+        // Instantiate the AutoComplete
+        var autoComplete = new YAHOO.widget.AutoComplete("cleoInput", "cleoContainer", dataSource);
+        autoComplete.queryMatchContains = true;
+        autoComplete.queryQuestionMark = true;
+        autoComplete.useShadow = true;
+        autoComplete.animVert = false;
+        autoComplete.minQueryLength = 1;
+        autoComplete.queryDelay = 0.00001;
+        autoComplete.suppressInputUpdate = true;
+        autoComplete.allowBrowserAutocomplete = false;
+
+        autoComplete.generateRequest = function(sQuery)
+        {
+            return "user=stefan&q=" + sQuery;
+        }
+
+        autoComplete.formatResult = function (oResultData, sQuery, sResultMatch) {
+            var id = oResultData[0];
+            var text = oResultData[1];
+
+            var markup = ["<p class='item-mainline'>", text, "</p>",
+                "<p class='item-subline'>", "", "</p>"];
+
+            return (markup.join(""));
+        };
+
+        autoComplete.itemSelectEvent.subscribe(function(type, args) {
+            var data = args[2];
+            document.getElementById("cleoInput").value = data[1];
+            jQuery.ajax({
+                type: "POST",
+                data: { user: "stefan", id: data[0] },
+                url: "http://ec2-50-19-67-63.compute-1.amazonaws.com:8081/personalize",
+                success: function(data) {
+                    alert(data);
+                },
+                error: function(msg) {
+                    alert(msg);
+                }
+            });
+        });
+
+        return {
+            oDS: dataSource,
+            oAC: autoComplete
+        };
+    }();
+</script>
+</body>
+</html>
+
