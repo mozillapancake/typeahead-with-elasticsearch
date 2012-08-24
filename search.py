@@ -1,47 +1,68 @@
 #!/usr/bin/python
 
+
 from bottle import route, run, request, response, static_file, post
 import json
 import requests
+
 
 @route('/')
 def root():
     return static_file('search.html', root='.', mimetype='text/html')
 
+
 @route('/search')
 def search():
-    r = {
+
+    query = {
         "fields": [ "name" ],
         "query": {
+            "text_phrase": { "name.start": request.query.q }
+        }
+    }
+    r = requests.get("http://127.0.0.1:9200/topics/global_topic/_search?pretty=true",
+                     data=json.dumps(query))
+    global_results = json.loads(r.text)
+
+    query = {
+        "fields": ["name"],
+        "query": {
             "bool": {
-                "must": [
-                    { "text_phrase": { "name.start": request.query.q } }
-                ],
-                "should": [
-                    { "term": { "users": request.query.user } }
-                ],
-                "minimum_number_should_match" : 0
+               "must": [
+                   { "text_phrase": { "name.start": request.query.q } },
+                   { "term": { "user": request.query.user } }
+               ] 
             }
         }
     }
-    print r
-    data = json.dumps(r)
-    r = requests.get("http://127.0.0.1:9200/topics/topic/_search?pretty=true", data=data)
-    print r.text
+    r = requests.get("http://127.0.0.1:9200/topics/user_topic/_search?pretty=true",
+                     data=json.dumps(query))
+    personal_results = json.loads(r.text)
+
+    personal_topics = [hit['fields']['name'] for hit in personal_results['hits']['hits']]
+
+    results = []
+    for hit in personal_results['hits']['hits']:
+        results.append({ 'id': hit['_id'], 'name': hit['fields']['name'], 'type': 'personal' })
+    for hit in global_results['hits']['hits']:
+        if hit['fields']['name'] not in personal_topics:
+            results.append({ 'id': hit['_id'], 'name': hit['fields']['name'], 'type': 'global' })
+
     response.content_type = "application/json"
-    return r.text
+    return json.dumps({'results': results }, sort_keys = False, indent = 4) + "\n"
+
 
 @post('/personalize')
 def personalize():
-    r = {
-        "script" : "ctx._source.users += user",
-        "params" : {
-            "user" : request.forms.get('user')
-        }
+
+    document = {
+        "name": request.forms.get("name"),
+        "user": request.forms.get("user")
     }
-    data = json.dumps(r)
-    r = requests.post("http://localhost:9200/topics/topic/" + request.forms.get('id') + "/_update", data=data)
+    r = requests.post("http://localhost:9200/topics/user_topic/", data=json.dumps(document))
+
     response.content_type = "application/json"
     return r.text
+
 
 run(host='0.0.0.0', port=8081)

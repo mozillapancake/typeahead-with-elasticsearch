@@ -84,7 +84,7 @@
             border-bottom: 1px solid #aaaaaa;
         }
 
-        .yui-skin-sam .yui-ac-content li.yui-ac-highlight p.item-mainline {
+        .yui-skin-sam .yui-ac-content li.yui-ac-highlight p.item-mainline p.item-global p.item-personal {
             color: white;
         }
 
@@ -111,6 +111,17 @@
             margin: 0;
             overflow: hidden;
             padding-left: 10px;
+        }
+
+        .item-global {
+            font-size: 16pt;
+            color: #000000;
+        }
+
+        .item-personal {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #000000;;
         }
 
         .item-mainline {
@@ -152,6 +163,8 @@
             <div id="cleoContainer"></div>
         </div>
     </div>
+    <ul id="items">
+    </ul>
 </div>
 
 <script type="text/javascript">
@@ -165,8 +178,8 @@
 
         dataSource.responseType = YAHOO.util.XHRDataSource.TYPE_JSON;
         dataSource.responseSchema = {
-            resultsList: "hits.hits",
-            fields: ["_id", "fields.name"]
+            resultsList: "results",
+            fields: ["id", "name", "type"]
         };
 
         // Instantiate the AutoComplete
@@ -187,12 +200,18 @@
 
         autoComplete.formatResult = function (oResultData, sQuery, sResultMatch) {
             var id = oResultData[0];
-            var text = oResultData[1];
+            var name = oResultData[1];
+            var type = oResultData[2];
 
-            var markup = ["<p class='item-mainline'>", text, "</p>",
-                "<p class='item-subline'>", "", "</p>"];
-
-            return (markup.join(""));
+            if (type == "personal") {
+               var markup = ["<p class='item-personal'>", name, "</p>",
+                  "<p class='item-subline'>", "Personal topic", "</p>"];
+               return markup.join("");
+            } else {
+               var markup = ["<p class='item-global'>", name, "</p>",
+                  "<p class='item-subline'>", "Global topic", "</p>"];
+               return markup.join("");
+            }
         };
 
         autoComplete.itemSelectEvent.subscribe(function(type, args) {
@@ -200,13 +219,14 @@
             document.getElementById("cleoInput").value = data[1];
             jQuery.ajax({
                 type: "POST",
-                data: { user: "stefan", id: data[0] },
+                data: { user: "stefan", name: data[1] },
                 url: "http://ec2-50-19-67-63.compute-1.amazonaws.com:8081/personalize",
                 success: function(data) {
-                    alert(data);
+                    //alert(data);
+                    document.getElementById("items").value += "<li>" + document.getElementById("cleoInput").value + "</li>";
                 },
                 error: function(msg) {
-                    alert(msg);
+                    //alert(msg);
                 }
             });
         });
